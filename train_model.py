@@ -3,6 +3,7 @@ import os
 from data_processor import DataProcessor
 from model import DraftPredictor
 from sklearn.metrics import accuracy_score
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Train a League of Legends draft prediction model')
@@ -39,10 +40,15 @@ def main():
     accuracy = accuracy_score(y_test, y_pred)
     print(f"Model accuracy: {accuracy:.2f}")
 
-    # Save model
+    # Save model and processor
     model_path = os.path.join('checkpoints', f'{args.model_name}.joblib')
+    processor_path = os.path.join('checkpoints', f'{args.model_name}_processor.joblib')
+    
     model.save(model_path)
+    data_processor.save(processor_path)
+    
     print(f"Model saved to {model_path}")
+    print(f"Data processor saved to {processor_path}")
 
 if __name__ == '__main__':
     main() 

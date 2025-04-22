@@ -5,37 +5,78 @@ from typing import Dict, List, Tuple
 from collections import Counter
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import joblib
 
 
 class DataProcessor:
-    def __init__(self, games_path: str, champion_info_path: str):
-        self.games_df = pd.read_csv(games_path)
-        with open(champion_info_path, "r") as f:
-            self.champion_info = json.load(f)["data"]
+    def __init__(self, games_path: str = None, champion_info_path: str = None):
+        if games_path and champion_info_path:
+            self.games_df = pd.read_csv(games_path)
+            with open(champion_info_path, "r") as f:
+                self.champion_info = json.load(f)["data"]
+        else:
+            self.games_df = None
+            self.champion_info = None
+        
+        # Initialize PCA and scaler
+        self.pca = PCA(n_components=0.95)  # Keep 95% of variance
+        self.scaler = StandardScaler()
 
-        # Create mappings
-        # Create a list of all champion keys from the dictionary
-        champion_keys = [
-            champion["key"]
-            for champion in self.champion_info.values()
-            if champion["key"] != "None"
-        ]
-        champion_keys.sort()
+        if games_path and champion_info_path:
+            # Create mappings
+            # Create a list of all champion keys from the dictionary
+            champion_keys = [
+                champion["key"]
+                for champion in self.champion_info.values()
+                if champion["key"] != "None"
+            ]
+            champion_keys.sort()
 
-        print(f"Number of champions: {len(champion_keys)}")
-        print(f"Number of games: {len(self.games_df)}")
+            print(f"Number of champions: {len(champion_keys)}")
+            print(f"Number of games: {len(self.games_df)}")
 
-        # Create mappings
-        self.champion_id_to_key = {
-            champion["id"]: champion["key"]
-            for champion in self.champion_info.values()
-            if champion["key"] != "None"
+            # Create mappings
+            self.champion_id_to_key = {
+                champion["id"]: champion["key"]
+                for champion in self.champion_info.values()
+                if champion["key"] != "None"
+            }
+            self.champion_key_to_id = {
+                champion["key"]: champion["id"]
+                for champion in self.champion_info.values()
+                if champion["key"] != "None"
+            }
+
+    def save(self, path: str):
+        """Save the data processor with its fitted PCA and scaler."""
+        # Create a dictionary of attributes to save
+        processor_state = {
+            'champion_info': self.champion_info,
+            'champion_id_to_key': self.champion_id_to_key,
+            'champion_key_to_id': self.champion_key_to_id,
+            'pca': self.pca,
+            'scaler': self.scaler
         }
-        self.champion_key_to_id = {
-            champion["key"]: champion["id"]
-            for champion in self.champion_info.values()
-            if champion["key"] != "None"
-        }
+        joblib.dump(processor_state, path)
+
+    @classmethod
+    def load(cls, path: str):
+        """Load a saved data processor."""
+        processor_state = joblib.load(path)
+        
+        # Create a new instance
+        processor = cls()
+        
+        # Restore the state
+        processor.champion_info = processor_state['champion_info']
+        processor.champion_id_to_key = processor_state['champion_id_to_key']
+        processor.champion_key_to_id = processor_state['champion_key_to_id']
+        processor.pca = processor_state['pca']
+        processor.scaler = processor_state['scaler']
+        
+        return processor
 
     def prepare_train_test_split(self, test_size=0.2, random_state=42):
         X, y = self.process_data()
@@ -45,7 +86,19 @@ class DataProcessor:
             X, y, test_size=test_size, random_state=random_state
         )
 
-        return X_train, X_test, y_train, y_test
+        # Fit and transform the training data
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_train_pca = self.pca.fit_transform(X_train_scaled)
+        
+        # Transform the test data using the fitted scaler and PCA
+        X_test_scaled = self.scaler.transform(X_test)
+        X_test_pca = self.pca.transform(X_test_scaled)
+
+        print(f"Original number of features: {X_train.shape[1]}")
+        print(f"Number of PCA components: {self.pca.n_components_}")
+        print(f"Explained variance ratio: {self.pca.explained_variance_ratio_.sum():.2f}")
+
+        return X_train_pca, X_test_pca, y_train, y_test
 
     def process_data(self):
         # Create features for both teams
@@ -149,4 +202,8 @@ class DataProcessor:
                 if champ_id:
                     features[f"{champ_name}_banned_t2"] = 1
 
-        return features
+        # Apply the same scaling and PCA transformation as training data
+        features_scaled = self.scaler.transform(features)
+        features_pca = self.pca.transform(features_scaled)
+
+        return features_pca

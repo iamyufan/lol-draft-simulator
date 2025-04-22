@@ -21,7 +21,7 @@ class DraftPredictor:
             if champ["key"] != "None"
         }
 
-    def train(self, X: pd.DataFrame, y: pd.Series):
+    def train(self, X: np.ndarray, y: pd.Series):
         """Train the model on the given data."""
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -30,14 +30,15 @@ class DraftPredictor:
         self.model.fit(X_train, y_train)
 
         # Evaluate the model
-        y_pred = self.model.predict(X_test)
+        y_pred = self.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
         print(f"Model accuracy: {accuracy:.2f}")
 
-    def predict(
-        self,
-        features: pd.DataFrame,
-    ) -> float:
+    def predict(self, features: np.ndarray) -> np.ndarray:
+        """Predict the winning team (1 for team1, 0 for team2)."""
+        return self.model.predict(features)
+
+    def predict_proba(self, features: np.ndarray) -> float:
         """Predict the probability of team1 winning."""
         # Get probability of team1 winning
         prob = self.model.predict_proba(features)[0][1]
