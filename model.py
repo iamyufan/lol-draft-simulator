@@ -29,11 +29,6 @@ class DraftPredictor:
 
         self.model.fit(X_train, y_train)
 
-        # Evaluate the model
-        y_pred = self.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-        print(f"Model accuracy: {accuracy:.2f}")
-
     def predict(self, features: np.ndarray) -> np.ndarray:
         """Predict the winning team (1 for team1, 0 for team2)."""
         return self.model.predict(features)
