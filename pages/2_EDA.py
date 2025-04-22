@@ -3,7 +3,6 @@ import pandas as pd
 from data_processor import DataProcessor
 import os
 import plotly.express as px
-import plotly.graph_objects as go
 
 
 @st.cache_resource
