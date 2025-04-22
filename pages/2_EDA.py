@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 from data_processor import DataProcessor
 import os
-import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 @st.cache_resource
@@ -31,25 +32,23 @@ def main():
     # Winner distribution
     st.subheader("Winner Distribution")
     winner_counts = games_df["winner"].value_counts()
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.pie(
-        winner_counts.values,
-        labels=["Team 1", "Team 2"],
-        autopct='%1.1f%%',
-        startangle=90
+    fig = px.pie(
+        values=winner_counts.values,
+        names=["Team 1", "Team 2"],
+        title="Distribution of Winners"
     )
-    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
-    ax.set_title("Distribution of Winners")
-    st.pyplot(fig)
+    st.plotly_chart(fig)
 
     # Game duration distribution
     st.subheader("Game Duration Distribution")
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.hist(games_df["gameDuration"], bins=50)
-    ax.set_xlabel("Game Duration (seconds)")
-    ax.set_ylabel("Number of Games")
-    ax.set_title("Distribution of Game Duration")
-    st.pyplot(fig)
+    fig = px.histogram(
+        games_df,
+        x="gameDuration",
+        nbins=50,
+        title="Distribution of Game Duration",
+        labels={"gameDuration": "Game Duration (seconds)"}
+    )
+    st.plotly_chart(fig)
     
     # Top 10 most picked champions
     st.subheader("Top 10 Most Picked Champions")
@@ -61,13 +60,14 @@ def main():
     champ_counts = pd.Series(picked_champs).value_counts().head(10)
     champ_names = [processor.get_champion_name(champ_id) for champ_id in champ_counts.index]
     
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(champ_names, champ_counts.values)
-    ax.set_xlabel("Champion")
-    ax.set_ylabel("Number of Picks")
-    ax.set_title("Top 10 Most Picked Champions")
-    plt.xticks(rotation=45, ha='right')
-    st.pyplot(fig)
+    fig = px.bar(
+        x=champ_names,
+        y=champ_counts.values,
+        title="Top 10 Most Picked Champions",
+        labels={"x": "Champion", "y": "Number of Games Picked"}
+    )
+    fig.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig)
 
     # Top 10 most banned champions
     st.subheader("Top 10 Most Banned Champions")
@@ -79,13 +79,14 @@ def main():
     ban_counts = pd.Series(banned_champs).value_counts().head(10)
     ban_names = [processor.get_champion_name(champ_id) for champ_id in ban_counts.index]
     
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(ban_names, ban_counts.values)
-    ax.set_xlabel("Champion")
-    ax.set_ylabel("Number of Bans")
-    ax.set_title("Top 10 Most Banned Champions")
-    plt.xticks(rotation=45, ha='right')
-    st.pyplot(fig)
+    fig = px.bar(
+        x=ban_names,
+        y=ban_counts.values,
+        title="Top 10 Most Banned Champions",
+        labels={"x": "Champion", "y": "Number of Games Banned"}
+    )
+    fig.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig)
     
 if __name__ == "__main__":
     main()
