@@ -1,5 +1,7 @@
 # League of Legends Draft Simulator
 
+[Live Demo](https://lol-draft-simulator.streamlit.app/)
+
 This project uses machine learning to predict the outcome of League of Legends matches based on champion picks, bans, and summoner spells. The dataset used is from the Kaggle dataset [(LoL) League of Legends Ranked Games](https://www.kaggle.com/datasets/datasnaek/league-of-legends).
 
 ## Project Structure
