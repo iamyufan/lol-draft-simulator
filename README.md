@@ -46,3 +46,24 @@ The model uses the following features:
 - Team 2's 5 bans
 
 The target variable is the winning team (1 for team 1, 0 for team 2).
+
+### Implementation Details
+
+The model is implemented using a Random Forest Classifier with the following specifications:
+- 100 decision trees (n_estimators=100)
+- Random state set to 42 for reproducibility
+- Uses scikit-learn's RandomForestClassifier implementation
+
+The model provides the following key functionalities:
+- `train(X, y)`: Trains the model on the given features and target data
+- `predict(features)`: Predicts the winning team (1 for team1, 0 for team2)
+- `predict_proba(features)`: Returns the probability of team1 winning
+- `save(path)`: Saves the trained model to disk
+- `load(path)`: Loads a trained model from disk
+
+The model also includes champion information handling:
+- Loads champion data from `data/champion_info.json`
+- Maintains a mapping between champion IDs and their names
+- Filters out invalid champion entries (where key is "None")
+
+
