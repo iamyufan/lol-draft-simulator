@@ -54,7 +54,8 @@ class DataProcessor:
             'champion_info': self.champion_info,
             'champion_id_to_key': self.champion_id_to_key,
             'champion_key_to_id': self.champion_key_to_id,
-            'scaler': self.scaler
+            'scaler': self.scaler,
+            'games_df': self.games_df
         }
         joblib.dump(processor_state, path)
 
@@ -71,6 +72,7 @@ class DataProcessor:
         processor.champion_id_to_key = processor_state['champion_id_to_key']
         processor.champion_key_to_id = processor_state['champion_key_to_id']
         processor.scaler = processor_state['scaler']
+        processor.games_df = processor_state['games_df']
         
         return processor
 
