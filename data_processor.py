@@ -100,6 +100,12 @@ class DataProcessor:
         return X_train_scaled, X_test_scaled, y_train, y_test
 
     def process_data(self):
+        """Process the data to create features and labels.
+        
+        Returns:
+            X: pd.DataFrame - Features
+            y: pd.Series - Labels
+        """
         # Create features for both teams
         team1_features = self._create_team_features("t1")
         team2_features = self._create_team_features("t2")
@@ -147,6 +153,14 @@ class DataProcessor:
         return df
     
     def _create_team_features(self, team_prefix):
+        """Create features for a specific team.
+        
+        Args:
+            team_prefix: str - Prefix for the team (either "t1" or "t2")
+            
+        Returns:
+            pd.DataFrame: DataFrame with features in the format expected by the model
+        """
         # Initialize the feature columns
         feature_cols = []
         for champ_id, champ_key in self.champion_id_to_key.items():
