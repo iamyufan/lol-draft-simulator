@@ -27,7 +27,7 @@ if "team2_ban_names" not in st.session_state:
     ]
 
 # Initialize data processor and model
-@st.cache_resource
+@st.experimental_memo
 def load_data():
     processor_path = os.path.join("checkpoints", "draft_predictor_processor.joblib")
     if not os.path.exists(processor_path):
@@ -37,9 +37,12 @@ def load_data():
         st.stop()
     return DataProcessor.load(processor_path)
 
-@st.cache_resource
+@st.experimental_memo
 def load_model():
-    model = DraftPredictor()
+    HERE = os.path.dirname(os.path.abspath(__file__))
+    PARENT = os.path.dirname(HERE)
+    DEFAULT_CHAMPS  = os.path.join(PARENT, 'data', 'champion_info.json')
+    model = DraftPredictor(DEFAULT_CHAMPS)
     model_path = os.path.join("checkpoints", "draft_predictor.joblib")
     if not os.path.exists(model_path):
         st.error(
@@ -133,8 +136,6 @@ def main():
         features = processor.prepare_prediction_data(
             st.session_state.team1_champ_names,
             st.session_state.team2_champ_names,
-            st.session_state.team1_ban_names,
-            st.session_state.team2_ban_names,
         )
         # Get prediction
         prob = predictor.predict_proba(features)

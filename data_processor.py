@@ -61,6 +61,8 @@ class DataProcessor:
         # Create a dictionary of attributes to save
         processor_state = {
             'champion_info': self.champion_info,
+            'champion_info_2': self.champion_info_2,
+            'all_tags': self.all_tags,
             'champion_id_to_key': self.champion_id_to_key,
             'champion_key_to_id': self.champion_key_to_id,
             'scaler': self.scaler,
@@ -78,6 +80,8 @@ class DataProcessor:
         
         # Restore the state
         processor.champion_info = processor_state['champion_info']
+        processor.champion_info_2 = processor_state['champion_info_2']
+        processor.all_tags = processor_state['all_tags']
         processor.champion_id_to_key = processor_state['champion_id_to_key']
         processor.champion_key_to_id = processor_state['champion_key_to_id']
         processor.scaler = processor_state['scaler']
@@ -118,12 +122,12 @@ class DataProcessor:
         )  # Convert to binary (1 = team1 wins, 0 = team2 wins)
         
         # Remove All 0 Columns
-        variances = X.var(axis=0)
-        zero_var = variances[variances == 0].index.tolist()
-        if zero_var:
-            print(f"Dropping zero‐variance columns: {zero_var}")
-            X = X.drop(columns=zero_var)
-        self._dropped_cols = zero_var
+        # variances = X.var(axis=0)
+        # zero_var = variances[variances == 0].index.tolist()
+        # if zero_var:
+        #     print(f"Dropping zero‐variance columns: {zero_var}")
+        #     X = X.drop(columns=zero_var)
+        # self._dropped_cols = zero_var
 
         return X, y
 
@@ -216,15 +220,17 @@ class DataProcessor:
         for team_prefix in ["t1", "t2"]:
             for champ_key in self.champion_key_to_id.keys():
                 feature_cols.append(f"{champ_key}_picked_{team_prefix}")
-                feature_cols.append(f"{champ_key}_banned_{team_prefix}")
+                #feature_cols.append(f"{champ_key}_banned_{team_prefix}")
 
-        # Initialize DataFrame with zeros
-        features = pd.DataFrame(0, index=[0], columns=feature_cols)
+        
 
         for team_prefix in ["t1", "t2"]:
             for tag in self.all_tags:
                 feature_cols.append(f"{team_prefix}_{tag.lower()}_num")
-                
+        
+        # Initialize DataFrame with zeros
+        features = pd.DataFrame(0, index=[0], columns=feature_cols)
+        
         # Process team 1 champions
         for champ_name in team1_champs:
             if champ_name and champ_name != "":  # Skip None and empty strings
