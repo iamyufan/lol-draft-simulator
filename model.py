@@ -10,11 +10,11 @@ import json
 
 
 class DraftPredictor:
-    def __init__(self):
+    def __init__(self, champion_info):
         self.model = RandomForestClassifier(n_estimators=100, random_state=42)
-        self.pca = PCA(n_components=0.95)  # Keep 95% of variance
+        #self.pca = PCA(n_components=0.95)  # Keep 95% of variance
         # Load champion info
-        with open("data/champion_info.json", "r") as f:
+        with open(champion_info, "r") as f:
             self.champion_info = json.load(f)["data"]
         # Create champion ID to name mapping
         self.id_to_name = {
@@ -30,33 +30,41 @@ class DraftPredictor:
         )
 
         # Fit PCA on training data
-        X_train_pca = self.pca.fit_transform(X_train)
-        X_test_pca = self.pca.transform(X_test)
+        # X_train_pca = self.pca.fit_transform(X_train)
+        # X_test_pca = self.pca.transform(X_test)
+        
+        # print(f"Original number of features: {X_train.shape[1]}")
+        # print(f"Number of PCA components: {self.pca.n_components_}")
+        # print(f"Explained variance ratio: {self.pca.explained_variance_ratio_.sum():.2f}")
 
-        print(f"Original number of features: {X_train.shape[1]}")
-        print(f"Number of PCA components: {self.pca.n_components_}")
-        print(f"Explained variance ratio: {self.pca.explained_variance_ratio_.sum():.2f}")
-
-        self.model.fit(X_train_pca, y_train)
+        # self.model.fit(X_train_pca, y_train)
+        
+        # No PCA, train directly on raw features
+        print(f"Training on {X_train.shape[0]} samples, {X_train.shape[1]} features")
+        self.model.fit(X_train, y_train)
 
     def predict(self, features: np.ndarray) -> np.ndarray:
         """Predict the winning team (1 for team1, 0 for team2)."""
-        features_pca = self.pca.transform(features)
-        return self.model.predict(features_pca)
+        #features_pca = self.pca.transform(features)
+        #return self.model.predict(features_pca)
+        return self.model.predict(features)
 
     def predict_proba(self, features: np.ndarray) -> float:
         """Predict the probability of team1 winning."""
-        # Transform features using PCA
-        features_pca = self.pca.transform(features)
-        # Get probability of team1 winning
-        prob = self.model.predict_proba(features_pca)[0][1]
+        # # Transform features using PCA
+        # features_pca = self.pca.transform(features)
+        # # Get probability of team1 winning
+        # prob = self.model.predict_proba(features_pca)[0][1]
+        # return prob
+    
+        prob = self.model.predict_proba(features)[0][1]
         return prob
 
     def save(self, path: str):
         """Save the trained model to disk."""
         model_state = {
             'model': self.model,
-            'pca': self.pca
+            #'pca': self.pca
         }
         joblib.dump(model_state, path)
 
@@ -64,4 +72,4 @@ class DraftPredictor:
         """Load a trained model from disk."""
         model_state = joblib.load(path)
         self.model = model_state['model']
-        self.pca = model_state['pca']
+        #self.pca = model_state['pca']

@@ -10,11 +10,20 @@ import joblib
 
 
 class DataProcessor:
-    def __init__(self, games_path: str = None, champion_info_path: str = None):
+    def __init__(self, games_path: str = None, champion_info_path: str = None, champion_info_path_2: str = None):
         if games_path and champion_info_path:
             self.games_df = pd.read_csv(games_path)
             with open(champion_info_path, "r") as f:
                 self.champion_info = json.load(f)["data"]
+            
+            with open(champion_info_path_2, "r") as f:
+                self.champion_info_2 = json.load(f)["data"]
+            
+            self.all_tags = sorted({
+                tag
+                for info in self.champion_info_2.values()
+                for tag in info.get("tags", [])
+            })
         else:
             self.games_df = None
             self.champion_info = None
@@ -94,21 +103,55 @@ class DataProcessor:
         # Create features for both teams
         team1_features = self._create_team_features("t1")
         team2_features = self._create_team_features("t2")
-
+        team1_tag_counts = self._create_tag_count_features("t1")
+        team2_tag_counts = self._create_tag_count_features("t2")
         # Combine features
-        X = pd.concat([team1_features, team2_features], axis=1)
+        X = pd.concat([team1_features, team2_features, team1_tag_counts, team2_tag_counts], axis=1)
         y = self.games_df["winner"].map(
             {1: 1, 2: 0}
         )  # Convert to binary (1 = team1 wins, 0 = team2 wins)
+        
+        # Remove All 0 Columns
+        variances = X.var(axis=0)
+        zero_var = variances[variances == 0].index.tolist()
+        if zero_var:
+            print(f"Dropping zero‐variance columns: {zero_var}")
+            X = X.drop(columns=zero_var)
+        self._dropped_cols = zero_var
 
         return X, y
 
+    def _create_tag_count_features(self, team_prefix: str):
+        """
+        count the number of each tag in each team
+        for_example team1_tank_num, team2_fighter_num。
+        """
+        # 构建空白 DataFrame
+        cols = [f"{team_prefix}_{tag.lower()}_num" for tag in self.all_tags]
+        df = pd.DataFrame(0, index=self.games_df.index, columns=cols)
+
+        # 针对每个 tag，遍历每场比赛的 5 个英雄累计
+        for tag in self.all_tags:
+            col = f"{team_prefix}_{tag.lower()}_num"
+            def count_tag(row):
+                cnt = 0
+                for i in range(1, 6):
+                    champ_id = row[f"{team_prefix}_champ{i}id"]
+                    champ_key = self.champion_id_to_key.get(champ_id)
+                    info = self.champion_info_2.get(champ_key, {})
+                    if tag in info.get("tags", []):
+                        cnt += 1
+                return cnt
+            df[col] = self.games_df.apply(count_tag, axis=1)
+
+        return df
+    
     def _create_team_features(self, team_prefix):
         # Initialize the feature columns
         feature_cols = []
         for champ_id, champ_key in self.champion_id_to_key.items():
             feature_cols.append(f"{champ_key}_picked_{team_prefix}")
-            feature_cols.append(f"{champ_key}_banned_{team_prefix}")
+            #feature_cols.append(f"{champ_key}_banned_{team_prefix}")
 
         # Initialize the X DataFrame
         feature_df = pd.DataFrame(0, index=self.games_df.index, columns=feature_cols)
@@ -119,9 +162,9 @@ class DataProcessor:
                 feature_df[f"{champ_key}_picked_{team_prefix}"] = self.games_df[
                     f"{team_prefix}_champ{i}id"
                 ].apply(lambda x: 1 if x == champ_id else 0)
-                feature_df[f"{champ_key}_banned_{team_prefix}"] = self.games_df[
-                    f"{team_prefix}_ban{i}"
-                ].apply(lambda x: 1 if x == champ_id else 0)
+                # feature_df[f"{champ_key}_banned_{team_prefix}"] = self.games_df[
+                #     f"{team_prefix}_ban{i}"
+                # ].apply(lambda x: 1 if x == champ_id else 0)
 
         return feature_df
 
@@ -140,8 +183,8 @@ class DataProcessor:
         self,
         team1_champs,
         team2_champs,
-        team1_bans,
-        team2_bans,
+        #team1_bans,
+        #team2_bans,
     ):
         """Prepare data for prediction from champion selections and bans.
 
@@ -164,6 +207,10 @@ class DataProcessor:
         # Initialize DataFrame with zeros
         features = pd.DataFrame(0, index=[0], columns=feature_cols)
 
+        for team_prefix in ["t1", "t2"]:
+            for tag in self.all_tags:
+                feature_cols.append(f"{team_prefix}_{tag.lower()}_num")
+                
         # Process team 1 champions
         for champ_name in team1_champs:
             if champ_name and champ_name != "":  # Skip None and empty strings
@@ -178,21 +225,36 @@ class DataProcessor:
                 if champ_id:
                     features[f"{champ_name}_picked_t2"] = 1
 
-        # Process team 1 bans
-        for champ_name in team1_bans:
-            if champ_name and champ_name != "":  # Skip None and empty strings
-                champ_id = self.champion_key_to_id.get(champ_name)
-                if champ_id:
-                    features[f"{champ_name}_banned_t1"] = 1
+        # # Process team 1 bans
+        # for champ_name in team1_bans:
+        #     if champ_name and champ_name != "":  # Skip None and empty strings
+        #         champ_id = self.champion_key_to_id.get(champ_name)
+        #         if champ_id:
+        #             features[f"{champ_name}_banned_t1"] = 1
 
-        # Process team 2 bans
-        for champ_name in team2_bans:
-            if champ_name and champ_name != "":  # Skip None and empty strings
-                champ_id = self.champion_key_to_id.get(champ_name)
-                if champ_id:
-                    features[f"{champ_name}_banned_t2"] = 1
-
+        # # Process team 2 bans
+        # for champ_name in team2_bans:
+        #     if champ_name and champ_name != "":  # Skip None and empty strings
+        #         champ_id = self.champion_key_to_id.get(champ_name)
+        #         if champ_id:
+        #             features[f"{champ_name}_banned_t2"] = 1
+        
+        # team1 tag
+        for champ_name in team1_champs or []:
+            info = self.champion_info_2.get(champ_name, {})
+            for tag in info.get("tags", []):
+                col = f"t1_{tag.lower()}_num"
+                features.at[0, col] += 1
+        # team2 tag
+        for champ_name in team2_champs or []:
+            info = self.champion_info_2.get(champ_name, {})
+            for tag in info.get("tags", []):
+                col = f"t2_{tag.lower()}_num"
+                features.at[0, col] += 1
+        
+        # Drop features that all 0 in train
+        if hasattr(self, "_dropped_cols"):
+            features = features.drop(columns=self._dropped_cols, errors="ignore")
         # Apply the same scaling as training data
         features_scaled = self.scaler.transform(features)
-
         return features_scaled
