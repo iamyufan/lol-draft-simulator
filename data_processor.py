@@ -2,8 +2,8 @@ import pandas as pd
 import json
 import numpy as np
 from typing import Dict, List, Tuple
-from collections import Counter
-from sklearn.preprocessing import OneHotEncoder
+#from collections import Counter
+#from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
@@ -24,10 +24,15 @@ class DataProcessor:
                 for info in self.champion_info_2.values()
                 for tag in info.get("tags", [])
             })
+            #remove gameDuration < 17min
+            self.games_df = (
+                self.games_df[self.games_df["gameDuration"] >= 1020]
+                .reset_index(drop=True)
+            )
         else:
             self.games_df = None
             self.champion_info = None
-        
+
         # Initialize scaler
         self.scaler = StandardScaler()
 
@@ -136,11 +141,9 @@ class DataProcessor:
         count the number of each tag in each team
         for_example team1_tank_num, team2_fighter_num。
         """
-        # 构建空白 DataFrame
         cols = [f"{team_prefix}_{tag.lower()}_num" for tag in self.all_tags]
         df = pd.DataFrame(0, index=self.games_df.index, columns=cols)
 
-        # 针对每个 tag，遍历每场比赛的 5 个英雄累计
         for tag in self.all_tags:
             col = f"{team_prefix}_{tag.lower()}_num"
             def count_tag(row):

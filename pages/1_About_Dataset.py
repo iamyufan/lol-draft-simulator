@@ -61,18 +61,42 @@ def main():
         title="Distribution of Winners"
     )
     st.plotly_chart(fig)
-
+    
+    # Unique values per column
+    st.subheader("Unique Values per Column")
+    exclude_cols = ["gameId", "creationTime", "gameDuration", "seasonId", "firstBlood", "firstTower", "firstInhibitor", "firstBaron", "firstDragon"]
+    unique_counts = games_df.drop(columns=exclude_cols, errors="ignore").nunique()
+    fig = px.bar(
+        x=unique_counts.index,
+        y=unique_counts.values,
+        title="Unique Values per Column",
+        labels={"x": "Column", "y": "Number of Unique Values"}
+    )
+    fig.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig)
+    
     # Game duration distribution
     st.subheader("Game Duration Distribution")
     fig = px.histogram(
         games_df,
         x="gameDuration",
-        nbins=50,
+        #nbins=30,
         title="Distribution of Game Duration",
         labels={"gameDuration": "Game Duration (seconds)"}
     )
     st.plotly_chart(fig)
     
+    # Game duration after filtering 17 minutes
+    st.subheader("Game Duration Distribution (Filtered > 17 minutes)")
+    filtered_games = games_df[games_df["gameDuration"] >= 1020]  # 17 minutes in seconds
+    fig = px.histogram(
+        filtered_games,
+        x="gameDuration",
+        #nbins=30,
+        title="Distribution of Game Duration (Filtered > 17 minutes)",
+        labels={"gameDuration": "Game Duration (seconds)"}
+    )
+    st.plotly_chart(fig)
     # Top 10 most picked champions
     st.subheader("Top 10 Most Picked Champions")
     picked_champs = []
