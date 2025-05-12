@@ -2,8 +2,12 @@ import argparse
 import os
 from data_processor import DataProcessor
 from model import DraftPredictor
-from sklearn.metrics import accuracy_score
-
+from sklearn.metrics import (
+    accuracy_score,
+    roc_auc_score,
+    precision_score,
+    recall_score,
+)
 def main():
     # Parse command line arguments
     # determine the directory this file lives in
@@ -17,7 +21,7 @@ def main():
         description='Train a League of Legends draft prediction model'
     )
     parser.add_argument(
-        '--games_path',
+        '--games_path', 
         type=str,
         default=DEFAULT_GAMES,
         help='Path to the games data CSV file'
@@ -47,11 +51,27 @@ def main():
         help='Random seed for reproducibility'
     )
     parser.add_argument(
+        '--model_type',
+        type=str,
+        default='random_forest',
+        choices=['logistic_regression', 'svm', 'random_forest', 'xgboost'],
+        help='Which algorithm to use'
+    )
+    parser.add_argument(
         '--model_name',
         type=str,
         default='draft_predictor',
         help='Name to save the model under'
     )
+    
+    # RF & XGB
+    parser.add_argument('--n_estimators',   type=int,   nargs='+', default=[50,100])
+    parser.add_argument('--max_depth',      type=int,   nargs='+', default=[5,10])
+    parser.add_argument('--learning_rate',  type=float, nargs='+', default=[0.1,0.3])
+    # LR & SVM
+    parser.add_argument('--C',              type=float, nargs='+', default=[0.01,0.1,1,10])
+    parser.add_argument('--kernel',         type=str,   nargs='+', default=['linear','rbf'])
+    parser.add_argument('--gamma',          type=str,   nargs='+', default=['scale','auto'])
     args = parser.parse_args()
 
     # Create checkpoints directory if it doesn't exist
@@ -64,16 +84,62 @@ def main():
         test_size=args.test_size,
         random_state=args.random_state
     )
+    
+    grid = []
+    if args.model_type in ('random_forest','xgboost'):
+        for n in args.n_estimators:
+            for d in args.max_depth:
+                for lr in (args.learning_rate if args.model_type=='xgboost' else [None]):
+                    params = {'n_estimators':n, 'max_depth':d}
+                    if lr is not None: params['learning_rate'] = lr
+                    grid.append(params)
+
+    elif args.model_type == 'logistic':
+        for C in args.C:
+            grid.append({'C':C})
+
+    elif args.model_type == 'svm':
+        for C in args.C:
+            for kernel in args.kernel:
+                for gamma in args.gamma:
+                    grid.append({'C':C, 'kernel':kernel, 'gamma':gamma})
+                    
+                    
+    # 3) sweep
+    best_acc, best_params = 0.0, None
+    for params in grid:
+        print("→ trying", args.model_type, params)
+        model = DraftPredictor(
+            model_type=args.model_type,
+            **params,champion_info_path=args.champion_info_path
+        )
+        model.train(X_train, y_train)
+        preds = model.predict(X_test)
+        acc = accuracy_score(y_test, preds)
+        print("   ↳ acc =", acc)
+        if acc > best_acc:
+            best_acc, best_params = acc, params.copy()
+
+    print(f"Best validation accuracy = {best_acc:.4f} with {best_params}")
 
     # Initialize and train model
-    print("Training model...")
-    model = DraftPredictor(args.champion_info_path)
-    model.train(X_train, y_train)
+    print(f"Training a {args.model_type} model...")
+    final_model = DraftPredictor(model_type=args.model_type, **best_params,champion_info_path=args.champion_info_path)
+    final_model.train(X_train, y_train)
+
+    # 5) evaluate on test set
+    y_pred      = final_model.predict(X_test)
+    # for AUC we need scores / probabilities if available
+    try:
+        y_score = final_model.model.predict_proba(X_test)[:,1]
+    except AttributeError:
+        y_score = final_model.model.decision_function(X_test)
+    print("\n=== TEST SET METRICS ===")
+    print("Accuracy :", accuracy_score(y_test, y_pred))
+    print("AUC-ROC  :", roc_auc_score(y_test, y_score))
+    print("Precision:", precision_score(y_test, y_pred))
+    print("Recall   :", recall_score(y_test, y_pred))
     
-    # Evaluate model
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model accuracy: {accuracy:.2f}")
 
     # Save model and processor
     model_path = os.path.join('checkpoints', f'{args.model_name}.joblib')
