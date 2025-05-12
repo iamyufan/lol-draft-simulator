@@ -19,6 +19,30 @@ def load_data():
 def main():
     st.title("League of Legends Draft Analysis")
 
+    # Dataset Introduction
+    st.header("Dataset Introduction")
+    st.write("""
+    This project utilizes the League of Legends dataset from Kaggle, which contains over 50,000 ranked games from the European West (EUW) server. 
+    The dataset provides comprehensive information about each game, including champion picks, bans, and match outcomes.
+    """)
+    
+    st.subheader("Dataset Source")
+    st.write("""
+    - **Source**: [League of Legends Dataset on Kaggle](https://www.kaggle.com/datasets/datasnaek/league-of-legends)
+    - **Region**: European West (EUW) server
+    - **Game Type**: Ranked matches
+    - **Size**: Over 50,000 games
+    """)
+    
+    st.subheader("Dataset Contents")
+    st.write("""
+    The dataset includes:
+    - Detailed match information for each game
+    - Champion picks and bans for both teams
+    - Game duration and outcome
+    - JSON files for mapping champion and summoner spell IDs to their names
+    """)
+
     processor = load_data()
 
     # Load the games data

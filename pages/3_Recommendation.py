@@ -111,21 +111,9 @@ def main():
                 )
 
                 # Display recommendations
-                st.subheader("Recommended Picks for Team 2")
+                st.subheader("Recommended Picks for the final pick")
                 for i, (champ, prob) in enumerate(recommendations, 1):
                     st.write(f"{i}. **{champ}** - Win Probability: {prob:.1%}")
-
-                # Display team compositions
-                st.subheader("Current Team Compositions")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write("**Team 1:**")
-                    for champ in team1_champs:
-                        st.write(f"- {champ}")
-                with col2:
-                    st.write("**Team 2:**")
-                    for champ in team2_champs:
-                        st.write(f"- {champ}")
 
             except Exception as e:
                 st.error(f"Error getting recommendations: {str(e)}")
