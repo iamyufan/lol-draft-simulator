@@ -5,7 +5,7 @@ import os
 import plotly.express as px
 
 
-@st.experimental_memo
+@st.cache_data
 def load_data():
     processor_path = os.path.join("checkpoints", "draft_predictor_processor.joblib")
     if not os.path.exists(processor_path):

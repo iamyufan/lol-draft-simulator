@@ -27,7 +27,7 @@ if "team2_ban_names" not in st.session_state:
     ]
 
 # Initialize data processor and model
-@st.experimental_memo
+@st.cache_data
 def load_data():
     processor_path = os.path.join("checkpoints", "draft_predictor_processor.joblib")
     if not os.path.exists(processor_path):
@@ -37,7 +37,7 @@ def load_data():
         st.stop()
     return DataProcessor.load(processor_path)
 
-@st.experimental_memo
+@st.cache_data
 def load_model():
     HERE = os.path.dirname(os.path.abspath(__file__))
     PARENT = os.path.dirname(HERE)
