@@ -84,7 +84,9 @@ def main():
         test_size=args.test_size,
         random_state=args.random_state
     )
-    
+    print("Data processing complete.")
+    print(f"Training set size: {len(X_train)}")
+    print(f"Test set size: {len(X_test)}")
     grid = []
     if args.model_type in ('random_forest','xgboost'):
         for n in args.n_estimators:
