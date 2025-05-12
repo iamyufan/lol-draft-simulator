@@ -36,8 +36,9 @@ def recommend_pick(
             team1_champs=team1_champs,
             team2_champs=team2_full
         )
-
-        prob_team1_win = model.predict_proba(feats)
+        
+        
+        prob_team1_win = model.predict_proba(feats).item()
         prob_team2_win = 1.0 - prob_team1_win
 
         recommendations.append((champ, prob_team2_win))
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     model.load(MODEL_PATH)
 
     team1 = ["Aatrox", "LeeSin", "Ahri", "Jinx", "Thresh"]
-    team2_partial = ["Ornn", "Lillia", "Orianna", "Aphelios"]
+    team2_partial = ["Ornn", "MasterYi", "Yasuo", "TahmKench"]
 
     top_recs = recommend_pick(team1, team2_partial, processor, model, top_k=8)
 

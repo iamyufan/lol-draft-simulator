@@ -401,7 +401,7 @@ class DraftPredictor:
 
         elif mt == 'random_forest':
             self.model = RandomForestScratch(
-                n_trees=n_estimators,
+                n_estimators=n_estimators,
                 max_depth=max_depth
             )
 
