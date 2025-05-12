@@ -129,6 +129,7 @@ def main():
 
     # 5) evaluate on test set
     y_pred      = final_model.predict(X_test)
+    print("Test set predictions:", y_pred)
     # for AUC we need scores / probabilities if available
     try:
         y_score = final_model.model.predict_proba(X_test)[:,1]

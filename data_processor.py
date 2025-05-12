@@ -24,11 +24,17 @@ class DataProcessor:
                 for info in self.champion_info_2.values()
                 for tag in info.get("tags", [])
             })
-            #remove gameDuration < 17min
-            self.games_df = (
-                self.games_df[self.games_df["gameDuration"] >= 1020]
-                .reset_index(drop=True)
-            )
+            # Remove gameDuration < 17min
+            self.games_df = self.games_df[self.games_df["gameDuration"] >= 1020]
+            # Remove outliers
+            # Calculate the IQR for gameDuration
+            # IQR = Q3 - Q1
+            durations = self.games_df["gameDuration"]
+            Q1 = durations.quantile(0.25)
+            Q3 = durations.quantile(0.75)
+            IQR = Q3 - Q1
+            upper_fence = Q3 + 1.5 * IQR
+            self.games_df = self.games_df[durations <= upper_fence]
         else:
             self.games_df = None
             self.champion_info = None
