@@ -9,22 +9,6 @@ if "team1_champ_names" not in st.session_state:
     st.session_state.team1_champ_names = ["LeeSin", "Ahri", "Jinx", "Thresh", "Gnar"]
 if "team2_champ_names" not in st.session_state:
     st.session_state.team2_champ_names = ["Zed", "Yasuo", "Darius", "Kayn", "Vayne"]
-if "team1_ban_names" not in st.session_state:
-    st.session_state.team1_ban_names = [
-        "Lucian",
-        "Nami",
-        "Aatrox",
-        "Orianna",
-        "Sejuani",
-    ]
-if "team2_ban_names" not in st.session_state:
-    st.session_state.team2_ban_names = [
-        "Ezreal",
-        "Lulu",
-        "Graves",
-        "Syndra",
-        "Renekton",
-    ]
 
 # Initialize data processor and model
 @st.cache_data
@@ -82,22 +66,6 @@ def main():
                 key=f"team1_champ_{i}",
                 index=default_index,
             )
-        st.subheader("Team 1 Bans")
-        for i in range(5):
-            default_index = (
-                0
-                if not st.session_state.team1_ban_names[i]
-                else list(champion_options.keys()).index(
-                    st.session_state.team1_ban_names[i]
-                )
-                + 1
-            )
-            st.session_state.team1_ban_names[i] = st.selectbox(
-                f"Team 1 Ban {i+1}",
-                options=[""] + list(champion_options.keys()),
-                key=f"team1_ban_names_{i}",
-                index=default_index,
-            )
 
     with col2:
         st.header("Team 2")
@@ -116,20 +84,6 @@ def main():
                 key=f"team2_champ_{i}",
                 index=default_index,
             )
-        st.subheader("Team 2 Bans")
-        for i in range(5):
-            default_index = (
-                0
-                if not st.session_state.team2_ban_names[i]
-                else list(champion_options.keys()).index(st.session_state.team2_ban_names[i])
-                + 1
-            )
-            st.session_state.team2_ban_names[i] = st.selectbox(
-                f"Team 2 Ban {i+1}",
-                options=[""] + list(champion_options.keys()),
-                key=f"team_ban_name_{i}",
-                index=default_index,
-            )
 
     # Add predict button
     if st.button("Predict Match Outcome"):
@@ -139,6 +93,7 @@ def main():
         )
         # Get prediction
         prob = predictor.predict_proba(features)
+        prob = float(prob)  # Convert numpy array to float
 
         # Display prediction
         st.subheader("Prediction")
