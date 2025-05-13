@@ -175,23 +175,20 @@ class DataProcessor:
             pd.DataFrame: DataFrame with features in the format expected by the model
         """
         # Initialize the feature columns
-        feature_cols = []
-        for champ_id, champ_key in self.champion_id_to_key.items():
-            feature_cols.append(f"{champ_key}_picked_{team_prefix}")
-            #feature_cols.append(f"{champ_key}_banned_{team_prefix}")
-
-        # Initialize the X DataFrame
+        feature_cols = [
+            f"{champ_key}_picked_{team_prefix}"
+            for champ_key in self.champion_id_to_key.values()
+        ]
+        # start all zeros
         feature_df = pd.DataFrame(0, index=self.games_df.index, columns=feature_cols)
 
-        # Process champions
+        # for each pick‐slot, ADD into the correct champion column
         for i in range(1, 6):
+            slot_col = f"{team_prefix}_champ{i}id"
+            # vectorized per‐champ:
             for champ_id, champ_key in self.champion_id_to_key.items():
-                feature_df[f"{champ_key}_picked_{team_prefix}"] = self.games_df[
-                    f"{team_prefix}_champ{i}id"
-                ].apply(lambda x: 1 if x == champ_id else 0)
-                # feature_df[f"{champ_key}_banned_{team_prefix}"] = self.games_df[
-                #     f"{team_prefix}_ban{i}"
-                # ].apply(lambda x: 1 if x == champ_id else 0)
+                mask = (self.games_df[slot_col] == champ_id)
+                feature_df.loc[mask, f"{champ_key}_picked_{team_prefix}"] += 1
 
         return feature_df
 
@@ -226,33 +223,21 @@ class DataProcessor:
         """
         # Create feature columns
         feature_cols = []
-        for team_prefix in ["t1", "t2"]:
-            for champ_key in self.champion_key_to_id.keys():
-                feature_cols.append(f"{champ_key}_picked_{team_prefix}")
-                #feature_cols.append(f"{champ_key}_banned_{team_prefix}")
-
-        
-
-        for team_prefix in ["t1", "t2"]:
+        for t in ("t1", "t2"):
+            for champ_key in self.champion_key_to_id:
+                feature_cols.append(f"{champ_key}_picked_{t}")
             for tag in self.all_tags:
-                feature_cols.append(f"{team_prefix}_{tag.lower()}_num")
-        
-        # Initialize DataFrame with zeros
-        features = pd.DataFrame(0, index=[0], columns=feature_cols)
-        
-        # Process team 1 champions
-        for champ_name in team1_champs:
-            if champ_name and champ_name != "":  # Skip None and empty strings
-                champ_id = self.champion_key_to_id.get(champ_name)
-                if champ_id:
-                    features[f"{champ_name}_picked_t1"] = 1
+                feature_cols.append(f"{t}_{tag.lower()}_num")
 
-        # Process team 2 champions
-        for champ_name in team2_champs:
-            if champ_name and champ_name != "":  # Skip None and empty strings
-                champ_id = self.champion_key_to_id.get(champ_name)
-                if champ_id:
-                    features[f"{champ_name}_picked_t2"] = 1
+        features = pd.DataFrame(0, index=[0], columns=feature_cols)
+
+        # accumulate picks for team1
+        for champ_name in team1_champs or []:
+            features.at[0, f"{champ_name}_picked_t1"] += 1
+
+        # accumulate picks for team2
+        for champ_name in team2_champs or []:
+            features.at[0, f"{champ_name}_picked_t2"] += 1
 
         # # Process team 1 bans
         # for champ_name in team1_bans:
@@ -284,6 +269,4 @@ class DataProcessor:
         # Drop features that all 0 in train
         if hasattr(self, "_dropped_cols"):
             features = features.drop(columns=self._dropped_cols, errors="ignore")
-        # Apply the same scaling as training data
-        features_scaled = self.scaler.transform(features)
-        return features_scaled
+        return self.scaler.transform(features)

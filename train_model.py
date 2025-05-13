@@ -96,7 +96,7 @@ def main():
                     if lr is not None: params['learning_rate'] = lr
                     grid.append(params)
 
-    elif args.model_type == 'logistic':
+    elif args.model_type == 'logistic_regression':
         for C in args.C:
             grid.append({'C':C})
 
