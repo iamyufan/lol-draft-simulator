@@ -87,7 +87,7 @@ def main():
     st.plotly_chart(fig)
     
     # Game duration after filtering
-    st.subheader("Game Duration Distribution (Filtered > 17 minutes)")
+    st.subheader("Game Duration Distribution (Filtered)")
     normal_games = games_df[games_df["gameDuration"] >= 1020]  # 17 minutes in seconds
     durations = normal_games["gameDuration"]
     Q1 = durations.quantile(0.25)
@@ -99,7 +99,7 @@ def main():
         filtered_games,
         x="gameDuration",
         #nbins=30,
-        title="Distribution of Filter Game Duration",
+        title="Game Duration Distribution (Filtered)",
         labels={"gameDuration": "Game Duration (seconds)"}
     )
     st.plotly_chart(fig)
