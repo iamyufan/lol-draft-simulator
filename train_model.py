@@ -53,7 +53,7 @@ def main():
     parser.add_argument(
         '--model_type',
         type=str,
-        default='random_forest',
+        default='xgboost',
         choices=['logistic_regression', 'svm', 'random_forest', 'xgboost'],
         help='Which algorithm to use'
     )

@@ -367,7 +367,7 @@ class DraftPredictor:
     def __init__(
         self,
         champion_info_path: str,
-        model_type: str = 'random_forest',
+        model_type: str = 'xgboost',
         # shared hyper-params
         lr: float = 0.01,
         n_iter: int = 1000,
