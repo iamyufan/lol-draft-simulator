@@ -214,10 +214,10 @@ class DataProcessor:
         team1_champs: List[str],
         team2_champs: List[str],
     ) -> np.ndarray:
-        # 1) build the same pick+tag columns you used in process_data()
+        # 1) build the same pick+tag columns that are used in process_data()
         feature_cols = []
         for t in ("t1", "t2"):
-            # champion‐pick columns, in the same order as your training code
+            # champion‐pick columns, in the same order as the training code
             for champ_key in self.champion_key_to_id:
                 feature_cols.append(f"{champ_key}_picked_{t}")
             # tag‐count columns
@@ -241,8 +241,7 @@ class DataProcessor:
             for tag in self.champion_info_2[champ]["tags"]:
                 features.at[0, f"t2_{tag.lower()}_num"] += 1
 
-        # 5) make sure your stats columns are present (and in the same order!)
-        #    you probably should have done `self.stats_cols = [...]` in __init__
+        # 5) make sure the stats columns are present (and in the same order!)
         for stat in self.stats_cols:
             if stat not in features.columns:
                 features[stat] = 0.0
