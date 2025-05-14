@@ -9,8 +9,13 @@ This project uses machine learning to predict the outcome of League of Legends m
 - `data_processor.py`: Handles data loading and preprocessing
 - `train_model.py`: Trains and saves the prediction model
 - `evaluate_model.py`: Evaluates model performance
+- `recommend.py`: Make recommendations on the champion based on selected ones
+- `app.py`: The home page for the Streamlit application
 - `data/`: Contains the dataset and mapping files
+- `checkpoint/`: Contains the data processor and model file
 - `models/`: Stores trained models and encoders
+- `pages/`: The streamlit application pages
+
 
 ## How to Contribute
 
