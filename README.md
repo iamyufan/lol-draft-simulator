@@ -53,8 +53,13 @@ The project is organized into several key components:
    ```bash
    python train_model.py --model_type xgboost --games_path data/games.csv --champion_info_path data/champion_info.json
    ```
+   
+4. **Recommend Champions (`recommend.py`)**
 
-4. **Web Application (`pages/1_Draft_Simulator.py`)**
+   - A script to show Top K recommended champions for certain teams with corresponding win rate
+   - Input and adapt team composition and the integer k in the main function
+
+5. **Web Application (`pages/1_Draft_Simulator.py`)**
    - Streamlit-based user interface
    - Implements champion selection and ban interface
    - Handles model loading and inference
