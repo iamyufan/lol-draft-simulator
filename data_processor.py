@@ -35,9 +35,11 @@ class DataProcessor:
             IQR = Q3 - Q1
             upper_fence = Q3 + 1.5 * IQR
             self.games_df = self.games_df[durations <= upper_fence]
+
         else:
             self.games_df = None
             self.champion_info = None
+        self.stats_cols = ["firstBlood"]
 
         # Initialize scaler
         self.scaler = StandardScaler()
@@ -126,8 +128,12 @@ class DataProcessor:
         team2_features = self._create_team_features("t2")
         team1_tag_counts = self._create_tag_count_features("t1")
         team2_tag_counts = self._create_tag_count_features("t2")
+        stats_cols = [
+            "firstBlood"
+        ]
+        game_stats = self.games_df[stats_cols]
         # Combine features
-        X = pd.concat([team1_features, team2_features, team1_tag_counts, team2_tag_counts], axis=1)
+        X = pd.concat([team1_features, team2_features, team1_tag_counts, team2_tag_counts, game_stats], axis=1)
         y = self.games_df["winner"].map(
             {1: 1, 2: 0}
         )  # Convert to binary (1 = team1 wins, 0 = team2 wins)
@@ -205,68 +211,44 @@ class DataProcessor:
 
     def prepare_prediction_data(
         self,
-        team1_champs,
-        team2_champs,
-        #team1_bans,
-        #team2_bans,
-    ):
-        """Prepare data for prediction from champion selections and bans.
-
-        Args:
-            team1_champs: List of champion names for team 1
-            team2_champs: List of champion names for team 2
-            team1_bans: List of champion names banned by team 1
-            team2_bans: List of champion names banned by team 2
-
-        Returns:
-            pd.DataFrame: DataFrame with features in the format expected by the model
-        """
-        # Create feature columns
+        team1_champs: List[str],
+        team2_champs: List[str],
+    ) -> np.ndarray:
+        # 1) build the same pick+tag columns you used in process_data()
         feature_cols = []
         for t in ("t1", "t2"):
+            # champion‐pick columns, in the same order as your training code
             for champ_key in self.champion_key_to_id:
                 feature_cols.append(f"{champ_key}_picked_{t}")
+            # tag‐count columns
             for tag in self.all_tags:
                 feature_cols.append(f"{t}_{tag.lower()}_num")
 
+        # 2) initialize a zero‐row DataFrame
         features = pd.DataFrame(0, index=[0], columns=feature_cols)
 
-        # accumulate picks for team1
-        for champ_name in team1_champs or []:
-            features.at[0, f"{champ_name}_picked_t1"] += 1
+        # 3) fill in picks
+        for champ in team1_champs:
+            features.at[0, f"{champ}_picked_t1"] += 1
+        for champ in team2_champs:
+            features.at[0, f"{champ}_picked_t2"] += 1
 
-        # accumulate picks for team2
-        for champ_name in team2_champs or []:
-            features.at[0, f"{champ_name}_picked_t2"] += 1
+        # 4) fill in tag‐counts
+        for champ in team1_champs:
+            for tag in self.champion_info_2[champ]["tags"]:
+                features.at[0, f"t1_{tag.lower()}_num"] += 1
+        for champ in team2_champs:
+            for tag in self.champion_info_2[champ]["tags"]:
+                features.at[0, f"t2_{tag.lower()}_num"] += 1
 
-        # # Process team 1 bans
-        # for champ_name in team1_bans:
-        #     if champ_name and champ_name != "":  # Skip None and empty strings
-        #         champ_id = self.champion_key_to_id.get(champ_name)
-        #         if champ_id:
-        #             features[f"{champ_name}_banned_t1"] = 1
+        # 5) make sure your stats columns are present (and in the same order!)
+        #    you probably should have done `self.stats_cols = [...]` in __init__
+        for stat in self.stats_cols:
+            if stat not in features.columns:
+                features[stat] = 0.0
 
-        # # Process team 2 bans
-        # for champ_name in team2_bans:
-        #     if champ_name and champ_name != "":  # Skip None and empty strings
-        #         champ_id = self.champion_key_to_id.get(champ_name)
-        #         if champ_id:
-        #             features[f"{champ_name}_banned_t2"] = 1
-        
-        # team1 tag
-        for champ_name in team1_champs or []:
-            info = self.champion_info_2.get(champ_name, {})
-            for tag in info.get("tags", []):
-                col = f"t1_{tag.lower()}_num"
-                features.at[0, col] += 1
-        # team2 tag
-        for champ_name in team2_champs or []:
-            info = self.champion_info_2.get(champ_name, {})
-            for tag in info.get("tags", []):
-                col = f"t2_{tag.lower()}_num"
-                features.at[0, col] += 1
-        
-        # Drop features that all 0 in train
-        if hasattr(self, "_dropped_cols"):
-            features = features.drop(columns=self._dropped_cols, errors="ignore")
+        # 6) **THIS IS THE KEY**: reorder to exactly what the scaler saw during fit
+        features = features.loc[:, self.scaler.feature_names_in_]
+
+        # 7) finally scale and return
         return self.scaler.transform(features)

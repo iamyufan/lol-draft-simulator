@@ -25,7 +25,7 @@ if "team2_champ_names" not in st.session_state:
 def load_models():
     """Load the trained models and processor."""
     processor = DataProcessor.load(PROC_PATH)
-    model = DraftPredictor(CHAMP_JSON)
+    model = DraftPredictor(CHAMP_JSON,model_type='xgboost')
     model.load(MODEL_PATH)
     return processor, model
 

@@ -26,7 +26,7 @@ def load_model():
     HERE = os.path.dirname(os.path.abspath(__file__))
     PARENT = os.path.dirname(HERE)
     DEFAULT_CHAMPS  = os.path.join(PARENT, 'data', 'champion_info.json')
-    model = DraftPredictor(DEFAULT_CHAMPS)
+    model = DraftPredictor(DEFAULT_CHAMPS,model_type='xgboost')
     model_path = os.path.join("checkpoints", "draft_predictor.joblib")
     if not os.path.exists(model_path):
         st.error(

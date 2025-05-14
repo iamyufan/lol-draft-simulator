@@ -71,7 +71,7 @@ def main():
     # LR & SVM
     parser.add_argument('--C',              type=float, nargs='+', default=[0.01,0.1,1,10])
     parser.add_argument('--kernel',         type=str,   nargs='+', default=['linear','rbf'])
-    parser.add_argument('--gamma',          type=str,   nargs='+', default=['scale','auto'])
+    parser.add_argument('--gamma',          type=str,   nargs='+', default=['scale'])
     args = parser.parse_args()
 
     # Create checkpoints directory if it doesn't exist
@@ -87,7 +87,6 @@ def main():
     print("Data processing complete.")
     print(f"Training set size: {len(X_train)}")
     print(f"Test set size: {len(X_test)}")
-    
     grid = []
     if args.model_type in ('random_forest','xgboost'):
         for n in args.n_estimators:

@@ -55,67 +55,87 @@ class LogisticRegressionScratch:
 
 
 class SVMScratch:
-    def __init__(self,
-                 C: float = 1.0,
-                 lr: float = 0.001,
-                 n_iter: int = 1000,
-                 kernel: str = 'linear',
-                 gamma: str = 'scale'):
-        """
-        C      : weight on hinge-loss term (larger C => less slack)
-        lr     : learning rate
-        n_iter : passes over data
-        kernel : only 'linear' implemented
-        gamma  : placeholder (not used for linear)
-        """
+    def __init__(self, C=1.0, lr=1e-3, n_iter=1000, kernel='linear', gamma='scale', n_components=100):
         self.C = C
         self.lr = lr
         self.n_iter = n_iter
         self.kernel = kernel
         self.gamma = gamma
+        self.n_components = n_components
         self.w = None
         self.b = None
+        self.W = None
+        self.basis = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
-        # only linear supported
-        if self.kernel != 'linear':
-            raise NotImplementedError("SVMScratch only supports kernel='linear'")
+    def _compute_gamma(self, X):
+        n_features = X.shape[1]
+        if self.gamma == 'scale':
+            var = np.var(X, axis=0).mean()
+            return 1.0 / (n_features * var) if var > 0 else 1.0
+        elif self.gamma == 'auto':
+            return 1.0 / n_features
+        else:
+            return float(self.gamma)
 
-        # map {0,1}→{-1,1}
-        y_ = np.where(y <= 0, -1, 1)
+    def _rbf_feature_map(self, X):
+        proj = X.dot(self.W) + self.basis
+        return np.sqrt(2.0/self.n_components) * np.cos(proj)
+
+    def fit(self, X, y):
+        # map {0,1} → {-1,+1}
+        y_signed = np.where(y<=0, -1, +1)
         n_samples, n_features = X.shape
 
-        # init
-        self.w = np.zeros(n_features)
+        # 1) transform to RFF if needed
+        if self.kernel == 'rbf':
+            γ = self._compute_gamma(X)
+            self.W     = np.random.normal(scale=np.sqrt(2*γ), size=(n_features, self.n_components))
+            self.basis = np.random.uniform(0, 2*np.pi, size=self.n_components)
+            X_train = self._rbf_feature_map(X)
+        else:
+            X_train = X
+
+        # 2) init
+        D = X_train.shape[1]
+        self.w = np.zeros(D)
         self.b = 0.0
 
+        # 3) SGD
         for _ in range(self.n_iter):
-            for idx, x_i in enumerate(X):
-                margin = y_[idx] * (x_i.dot(self.w) - self.b)
+            for i in range(n_samples):
+                xi = X_train[i]
+                yi = y_signed[i]
+                margin = yi * (xi.dot(self.w) + self.b)
+
                 if margin >= 1:
-                    # only regularization gradient
-                    dw = self.w
-                    db = 0.0
+                    # only regularizer ∂(½‖w‖²)/∂w = w
+                    grad_w = self.w
+                    grad_b = 0.0
                 else:
-                    # reg + hinge
-                    dw = self.w - self.C * y_[idx] * x_i
-                    db = -self.C * y_[idx]
+                    # ∂hinge/∂w = –C yi xi, ∂hinge/∂b = –C yi
+                    grad_w = self.w - self.C * yi * xi
+                    grad_b = -self.C * yi
 
-                self.w -= self.lr * dw
-                self.b -= self.lr * db
+                self.w -= self.lr * grad_w
+                self.b -= self.lr * grad_b
 
-    def decision_function(self, X: np.ndarray) -> np.ndarray:
-        return X.dot(self.w) - self.b
+    def decision_function(self, X):
+        if self.kernel == 'rbf':
+            Z = self._rbf_feature_map(X)
+            return Z.dot(self.w) + self.b
+        else:
+            return X.dot(self.w) + self.b
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X):
         return (self.decision_function(X) >= 0).astype(int)
 
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        # sigmoid of the decision function
-        df = self.decision_function(X)
-        probs = 1.0 / (1.0 + np.exp(-df))
-        return np.vstack([1-probs, probs]).T    
+    def predict_proba(self, X):
+        scores = self.decision_function(X)
+        probs = 1.0/(1.0 + np.exp(-scores))
+        return np.vstack([1-probs, probs]).T
 
+    
+    
 class Node:
     def __init__(self, feature_index=None, threshold=None, left=None, right=None, *, value=None):
         self.feature_index = feature_index
@@ -378,6 +398,7 @@ class DraftPredictor:
         n_estimators: int = 100,
         max_depth: int = None,
         learning_rate: float = 0.1,
+        n_components: int = 100
     ):
         mt = model_type.lower()
 
@@ -396,7 +417,8 @@ class DraftPredictor:
                 lr=lr,
                 n_iter=n_iter,
                 kernel=kernel,
-                gamma=gamma
+                gamma=gamma,
+                n_components=n_components
             )
 
         elif mt == 'random_forest':

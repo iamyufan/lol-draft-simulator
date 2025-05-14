@@ -57,7 +57,7 @@ if __name__ == "__main__":
     MODEL_PATH = "checkpoints/draft_predictor.joblib"
 
     processor = DataProcessor.load(PROC_PATH)
-    model = DraftPredictor(CHAMP_JSON)
+    model = DraftPredictor(CHAMP_JSON,model_type='xgboost')
     model.load(MODEL_PATH)
 
     team1 = ["Aatrox", "LeeSin", "Ahri", "Jinx", "Thresh"]
