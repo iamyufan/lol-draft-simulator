@@ -36,9 +36,9 @@ The project is organized into several key components:
 2. **Model Implementation (`model.py`)**
 
    - Implements the `DraftPredictor` class
-   - Uses Random Forest Classifier with PCA for dimensionality reduction
+   - Uses Logistic Regression, SVM, Random Forest and XGBoost
    - Key functionalities:
-     - `train()`: Trains the model with PCA transformation
+     - `train()`: Trains the model with certain model types and hyperparemeters
      - `predict()`: Makes binary predictions (team1/team2 win)
      - `predict_proba()`: Returns win probabilities
      - `save()/load()`: Model persistence
@@ -51,7 +51,7 @@ The project is organized into several key components:
    - Usage:
 
    ```bash
-   python train_model.py --games_path data/games.csv --champion_info_path data/champion_info.json
+   python train_model.py --model_type xgboost --games_path data/games.csv --champion_info_path data/champion_info.json
    ```
 
 4. **Web Application (`pages/1_Draft_Simulator.py`)**
