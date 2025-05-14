@@ -9,8 +9,13 @@ This project uses machine learning to predict the outcome of League of Legends m
 - `data_processor.py`: Handles data loading and preprocessing
 - `train_model.py`: Trains and saves the prediction model
 - `evaluate_model.py`: Evaluates model performance
+- `recommend.py`: Make recommendations on the champion based on selected ones
+- `app.py`: The home page for the Streamlit application
 - `data/`: Contains the dataset and mapping files
+- `checkpoint/`: Contains the data processor and model file
 - `models/`: Stores trained models and encoders
+- `pages/`: The streamlit application pages
+
 
 ## How to Contribute
 
@@ -31,9 +36,9 @@ The project is organized into several key components:
 2. **Model Implementation (`model.py`)**
 
    - Implements the `DraftPredictor` class
-   - Uses Random Forest Classifier with PCA for dimensionality reduction
+   - Uses Logistic Regression, SVM, Random Forest and XGBoost
    - Key functionalities:
-     - `train()`: Trains the model with PCA transformation
+     - `train()`: Trains the model with certain model types and hyperparemeters
      - `predict()`: Makes binary predictions (team1/team2 win)
      - `predict_proba()`: Returns win probabilities
      - `save()/load()`: Model persistence
@@ -46,10 +51,15 @@ The project is organized into several key components:
    - Usage:
 
    ```bash
-   python train_model.py --games_path data/games.csv --champion_info_path data/champion_info.json
+   python train_model.py --model_type xgboost --games_path data/games.csv --champion_info_path data/champion_info.json
    ```
+   
+4. **Recommend Champions (`recommend.py`)**
 
-4. **Web Application (`pages/1_Draft_Simulator.py`)**
+   - A script to show Top K recommended champions for certain teams with corresponding win rate
+   - Input and adapt team composition and the integer k in the main function
+
+5. **Web Application (`pages/1_Draft_Simulator.py`)**
    - Streamlit-based user interface
    - Implements champion selection and ban interface
    - Handles model loading and inference
