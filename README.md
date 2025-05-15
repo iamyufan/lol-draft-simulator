@@ -2,6 +2,8 @@
 
 [[Live Demo](https://lol-draft-simulator.streamlit.app/)]
 
+> Authors: Yufan Zhang, Ruitian Wu, Rundong Hu, Edward Wang
+
 This project uses machine learning to predict the outcome of League of Legends matches based on champion picks, bans, and summoner spells. The dataset used is from the Kaggle dataset [(LoL) League of Legends Ranked Games](https://www.kaggle.com/datasets/datasnaek/league-of-legends).
 
 ## Project Structure
@@ -16,6 +18,28 @@ This project uses machine learning to predict the outcome of League of Legends m
 - `models/`: Stores trained models and encoders
 - `pages/`: The streamlit application pages
 
+## How to run the project
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/league-of-legends-draft-simulator.git
+```
+
+
+2. Install the dependencies in a virtual environment
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. Run the project
+
+```bash
+streamlit run app.py
+```
 
 ## How to Contribute
 
@@ -97,37 +121,3 @@ The project is organized into several key components:
    - Save both model and processor together
    - Document model parameters and performance
 
-## Model Details 
-
-### Mid-Checkpoint Version
-
-The model uses the following features:
-
-- Team 1's 5 champions
-- Team 2's 5 champions
-- Team 1's 5 bans
-- Team 2's 5 bans
-
-The target variable is the winning team (1 for team 1, 0 for team 2).
-
-#### Implementation Details
-
-The model is implemented using a Random Forest Classifier with the following specifications:
-
-- 100 decision trees (n_estimators=100)
-- Random state set to 42 for reproducibility
-- Uses scikit-learn's RandomForestClassifier implementation
-
-The model provides the following key functionalities:
-
-- `train(X, y)`: Trains the model on the given features and target data
-- `predict(features)`: Predicts the winning team (1 for team1, 0 for team2)
-- `predict_proba(features)`: Returns the probability of team1 winning
-- `save(path)`: Saves the trained model to disk
-- `load(path)`: Loads a trained model from disk
-
-The model also includes champion information handling:
-
-- Loads champion data from `data/champion_info.json`
-- Maintains a mapping between champion IDs and their names
-- Filters out invalid champion entries (where key is "None")
